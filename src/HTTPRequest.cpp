@@ -18,7 +18,6 @@ HTTPRequest::HTTPRequest(Client &client) : client(client)
 		if (client.available())
 		{
 			buffer = client.read();
-
 			if (buffer != '\n')
 			{
 				header += buffer;
@@ -104,18 +103,20 @@ void HTTPRequest::response(Status status, int length)
 		client.print("HTTP/1.1 ");
 		if (status == OK)
 		{
-			client.print("200 OK");
+			client.println("200 OK");
 		}
 		else if (status == NOT_FOUND)
 		{
-			client.print("404 Not Found");
+			client.println("404 Not Found");
 		}
 		else if (status == NOT_IMPLEMENTED)
 		{
-			client.print("501 Not Implemented");
+			client.println("501 Not Implemented");
 		}
-		client.print("\r\nConnection: close\r\nContent-Length: ");
-		client.print(length);
-		client.print("\r\nContent-Type: text/html\r\n\r\n");
+		client.println("Connection: close");
+		client.print("Content-Length: ");
+		client.println(length);
+		client.println("Content-Type: text/html");
+		client.println();
 	}
 }
