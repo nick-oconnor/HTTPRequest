@@ -1,6 +1,6 @@
 = HTTPRequest Library for Arduino =
 
-The HTTPRequest library manages a HTTP server and provides an easy way to programmatically manage client sessions, allowing developers to dispatch and respond to HTTP requests with minimal overhead and code complexity.
+The HTTPRequest library provides an easy interface for accepting and responding to HTTP requests with minimal code complexity.
 
 For more information about this library please visit us at
 http://github.com/ngpitt/HTTPRequest

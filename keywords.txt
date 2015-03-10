@@ -12,11 +12,15 @@ HTTPRequest	KEYWORD1
 # Methods and Functions (KEYWORD2)
 #######################################
 
-getMethod	KEYWORD2
-getURI	KEYWORD2
-getData	KEYWORD2
-getValue	KEYWORD2
-response	KEYWORD2
+method	KEYWORD2
+uri	KEYWORD2
+params	KEYWORD2
+cookies	KEYWORD2
+getParam	KEYWORD2
+getCookie	KEYWORD2
+begin	KEYWORD2
+fileResponse	KEYWORD2
+stringResponse	KEYWORD2
 
 #######################################
 # Constants (LITERAL1)
