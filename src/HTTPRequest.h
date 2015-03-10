@@ -2,7 +2,7 @@
   HTTPRequest.h - Library for processing HTTP requests.
   Created by Nicholas Pitt, February 26, 2015.
   Released under the LGPL license.
-  */
+*/
 
 #ifndef HTTPRequest_h
 #define HTTPRequest_h
