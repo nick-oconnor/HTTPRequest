@@ -20,22 +20,10 @@ enum Method {
 template <size_t T, size_t U, size_t V, size_t W>
 class HTTPRequest {
 public:
-  HTTPRequest() {
-    header_ = new char[T];
-    uri_ = new char[U];
-    params_ = new char[V];
-    cookies_ = new char[W];
-  }
-  ~HTTPRequest() {
-    delete[] header_;
-    delete[] uri_;
-    delete[] params_;
-    delete[] cookies_;
-  }
   Method method() { return method_; }
-  char *uri() const { return uri_; }
-  char *params() const { return params_; }
-  char *cookies() const { return cookies_; }
+  char *uri() { return uri_; }
+  char *params() { return params_; }
+  char *cookies() { return cookies_; }
   bool getParam(char *name, char *header_, int size) {
     return parse(params_, '&', name, header_, size); }
   bool getCookie(char *name, char *header_, int size) {
@@ -83,20 +71,19 @@ public:
             delim = strchr(start, '?');
             if (delim) {
               length = end - delim;
-              snprintf(params_, length, "%s", delim + 1);
+              snprintf(params_, min(length, V), "%s", delim + 1);
               length = delim - start + 1;
             } else {
               length = end - start + 1;
             }
-            snprintf(uri_, length, "%s", start);
+            snprintf(uri_, min(length, U), "%s", start);
             method_header = false;
           } else if (method_ == POST && strstr(header_, "Content-Length: ") == header_) {
             content_length = strtol(header_ + 16, NULL, 10);
           } else if (strstr(header_, "Cookie: ") == header_) {
             start = header_ + 8;
             length = strlen(start) + 1;
-            cookies_ = new char[length];
-            snprintf(cookies_, length, "%s", start);
+            snprintf(cookies_, min(length, W), "%s", start);
             urlDecode(cookies_);
           } else if (!strlen(header_)) {
             if (method_ == POST && content_length) {
@@ -163,10 +150,10 @@ public:
 private:
   Client *client_;
   Method method_;
-  char *header_;
-  char *uri_;
-  char *params_;
-  char *cookies_;
+  char header_[T];
+  char uri_[U];
+  char params_[V];
+  char cookies_[W];
 
   bool parse(char *data, char delim, char *name, char *buffer, int size) const {
     int new_size = size, token_size = strlen(name) + 2;
