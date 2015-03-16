@@ -14,11 +14,6 @@
 
 #define FIELD_LENGTH 33
 #define DATABASE_SIZE 10
-#define DATABASE_PATH "/database.bin"
-
-#define CONTENT_TYPES_PATH "/types.txt"
-#define BAD_REQUEST_PATH "/400.htm"
-#define NOT_FOUND_PATH "/404.htm"
 #define HEADER_LENGTH 257
 #define URI_LENGTH 129
 #define PARAMS_LENGTH 129
@@ -31,11 +26,6 @@
 #define API_URI "/api/"
 #define ROOT_PATH "/root"
 #define DEFAULT_DOCUMENT "index.htm"
-#define OK "200 OK"
-#define BAD_REQUEST "400 Bad Request"
-#define NOT_FOUND "404 Not Found"
-#define JSON_TYPE "application/json"
-#define FILE_TYPE "text/html"
 
 // This struct defines the type of entries to store
 struct User : Entry {
@@ -83,10 +73,12 @@ void newSession(char *buffer) {
   }
 }
 template<size_t T, size_t U, size_t V, size_t W, size_t X>
-void apiResponse(bool success, char *message, JSON<T> &json, HTTPRequest<U, V, W, X> &request) {
+void apiResponse(bool success, char *message, JSON<T> &json, HTTPRequest<U, V, W, X> &request,
+                 char *cookie_name = NULL, char *cookie_value = NULL, char *cookie_path = NULL) {
   json.addBool("success", success);
   json.addString("message", message);
-  request.stringResponse(OK, JSON_TYPE, json.buffer());
+  request.stringResponse("200 OK", "application/json", json.buffer(), cookie_name, cookie_value,
+                         cookie_path);
 }
 
 void setup() {
@@ -110,7 +102,7 @@ void setup() {
   Serial.println(" Done.");
   
   Serial.print("Loading database...");
-  if (!database.open(DATABASE_PATH)) {
+  if (!database.open("/database.bin")) {
     Serial.print(" Done. (Created a new database)\r\n"
     "Adding database entries...");
     snprintf(user.username, FIELD_LENGTH, "%s", "admin");
@@ -125,9 +117,9 @@ void setup() {
   Serial.println(" Done.");
   
   Serial.print("Loading files...");
-  content_types = SD.open(CONTENT_TYPES_PATH);
-  bad_request = SD.open(BAD_REQUEST_PATH);
-  not_found = SD.open(NOT_FOUND_PATH);
+  content_types = SD.open("/types.txt");
+  bad_request = SD.open("/400.htm");
+  not_found = SD.open("/404.htm");
   if (!content_types || !bad_request || !not_found) {
     Serial.println(" Error!");
     return;
@@ -198,21 +190,17 @@ void loop() {
               database.get(user, queryByLogin)) {
             newSession(user.session);
             if (database.add(user, queryByUsername)) {
-              json.addBool("success", true);
-              json.addString("message", "Logged in.");
               json.addString("username", user.username); 
               json.addBool("admin", user.admin);
-              request.stringResponse(OK, JSON_TYPE, json.buffer(), "SESSION", user.session, "/");
+              apiResponse(true, "Logged in.", json, request, "SESSION", user.session, "/");
             } else {
               apiResponse(false, "Internal server error.", json, request);
             }
           } else if (request.getCookie("SESSION", user.session, FIELD_LENGTH) &&
                      database.get(user, queryBySession)) {
-            json.addBool("success", true);
-            json.addString("message", "Logged in.");
             json.addString("username", user.username); 
             json.addBool("admin", user.admin);
-            request.stringResponse(OK, JSON_TYPE, json.buffer());
+            apiResponse(true, "Logged in.", json, request);
           } else {
             apiResponse(false, "Invalid username/password.", json, request);
           }
@@ -265,15 +253,13 @@ void loop() {
               List list[size];
               JSON<JSON_ELEMENT_LENGTH> elements[size];
               
-              json.addBool("success", true);
-              json.addString("message", "List successful.");
               database.list(list, listUsers);
               for (size_t i = 0; i < size; i++) {
                 elements[i].addString("username", list[i].username);
                 elements[i].addBool("admin", list[i].admin);
               }
               json.addObjectArray("users", elements, size);
-              request.stringResponse(OK, JSON_TYPE, json.buffer());
+              apiResponse(true, "List successful.", json, request);
             } else if (!strcmp(call, "remove-user") &&
                        request.getParam("username", user.username, FIELD_LENGTH)) {
               if (database.remove(user, queryByUsername)) {
@@ -327,14 +313,14 @@ void loop() {
               }
             }
           }
-          request.fileResponse(OK, content_type, file);
+          request.fileResponse("200 OK", content_type, file);
           file.close();
         } else {
-          request.fileResponse(NOT_FOUND, FILE_TYPE, not_found);
+          request.fileResponse("404 Not Found", "text/html", not_found);
         }
       }
     } else {
-      request.fileResponse(BAD_REQUEST, FILE_TYPE, bad_request);
+      request.fileResponse("400 Bad Request", "text/html", bad_request);
     }
     client.stop();
   }
