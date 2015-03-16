@@ -37,7 +37,7 @@
 #define JSON_TYPE "application/json"
 #define FILE_TYPE "text/html"
 
-// These structs define the type of entries to store
+// This struct defines the type of entries to store
 struct User : Entry {
   char username[FIELD_LENGTH];
   char password[FIELD_LENGTH];
@@ -52,7 +52,7 @@ struct List {
 
 byte mac[] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06};
 EthernetServer server(PORT);
-FileDB<User> database(DATABASE_SIZE);
+FileDB<User, DATABASE_SIZE> database;
 HTTPRequest<HEADER_LENGTH, URI_LENGTH, PARAMS_LENGTH, COOKIES_LENGTH> request;
 File content_types, bad_request, not_found;
 
@@ -67,8 +67,11 @@ bool queryByLogin(struct User &database_entry, struct User &query_entry) {
 bool queryBySession(struct User &database_entry, struct User &query_entry) {
   return !strcmp(database_entry.session, query_entry.session);
 }
+
+// This is a list function passed to the database
 void listUsers(struct User &database_entry, void *data, size_t index) {
   List *list = (List *)data;
+  
   snprintf(list[index].username, FIELD_LENGTH, "%s", database_entry.username);
   list[index].admin = database_entry.admin;
 }
@@ -222,7 +225,7 @@ void loop() {
             } else {
               apiResponse(false, "Internal server error.", json, request);
             }
-          } else if (!strcmp(call, "edit") &&
+          } else if (!strcmp(call, "edit-user") &&
                      request.getParam("username", user.username, FIELD_LENGTH) &&
                      request.getParam("password", user.password, FIELD_LENGTH)) {
             if (database.add(user, queryBySession)) {
@@ -230,7 +233,7 @@ void loop() {
             } else {
               apiResponse(false, "Internal server error.", json, request);
             }
-          } else if (!strcmp(call, "toggle")) {
+          } else if (!strcmp(call, "toggle-status-led")) {
             json.addBool("success", true);
             if (digitalRead(13)) {
               digitalWrite(13, LOW);
@@ -242,7 +245,7 @@ void loop() {
           } else if (user.admin) {
             char admin[5];
             
-            if (!strcmp(call, "add") &&
+            if (!strcmp(call, "add-user") &&
                 request.getParam("username", user.username, FIELD_LENGTH) &&
                 request.getParam("password", user.password, FIELD_LENGTH) &&
                 request.getParam("admin", admin, 5)) {
@@ -257,7 +260,7 @@ void loop() {
               } else {
                 apiResponse(false, "Internal server error.", json, request);
               }
-            } else if (!strcmp(call, "list")) {
+            } else if (!strcmp(call, "list-users")) {
               size_t size = database.count();
               List list[size];
               JSON<JSON_ELEMENT_LENGTH> elements[size];
@@ -271,10 +274,10 @@ void loop() {
               }
               json.addObjectArray("users", elements, size);
               request.stringResponse(OK, JSON_TYPE, json.buffer());
-            } else if (!strcmp(call, "remove") &&
+            } else if (!strcmp(call, "remove-user") &&
                        request.getParam("username", user.username, FIELD_LENGTH)) {
               if (database.remove(user, queryByUsername)) {
-                apiResponse(false, "User removed.", json, request);
+                apiResponse(true, "User removed.", json, request);
               } else {
                 apiResponse(false, "Internal server error.", json, request);
               }
