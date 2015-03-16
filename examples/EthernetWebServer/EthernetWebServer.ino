@@ -207,7 +207,7 @@ void loop() {
         } else if (request.getCookie("SESSION", user.session, FIELD_LENGTH) &&
                    database.get(user, queryBySession)) {
           if (!strcmp(call, "logout")) {
-            user.session[0] = '\0';
+            newSession(user.session);
             if (database.add(user, queryByUsername)) {
               apiResponse(true, "Logged out.", json, request);
             } else {
